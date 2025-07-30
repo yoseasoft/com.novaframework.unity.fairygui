@@ -1,8 +1,6 @@
 ﻿## NovaFramework - Unity 工程插件
 
-NovaFramework 的 FairyGUI 插件
-
-提供FairyGUI相关的功能接口。
+NovaFramework的FairyGUI插件，提供UI界面相关的功能接口。
 
 ## 使用文档
 
