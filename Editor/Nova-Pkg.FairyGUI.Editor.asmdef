@@ -1,10 +1,12 @@
 {
-    "name": "FairyGUI",
+    "name": "Nova-Pkg.FairyGUI.Editor",
     "rootNamespace": "",
     "references": [
-        "Unity.TextMeshPro"
+        "Nova-Pkg.FairyGUI"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
