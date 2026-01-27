@@ -1,12 +1,10 @@
 {
-    "name": "Nova.FairyGUI.Editor",
+    "name": "NovaFramework.FairyGUI",
     "rootNamespace": "",
     "references": [
-        "Nova.FairyGUI"
+        "Unity.TextMeshPro"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
