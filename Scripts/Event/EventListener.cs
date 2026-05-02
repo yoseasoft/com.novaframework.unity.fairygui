@@ -12,11 +12,6 @@ namespace FairyGUI
         EventBridge _bridge;
         string _type;
 
-        /// <summary>
-        /// 是否处于异步点击状态
-        /// </summary>
-        public bool isAsyncClicking;
-
         public EventListener(EventDispatcher owner, string type)
         {
             _bridge = owner.GetEventBridge(type);
@@ -97,7 +92,7 @@ namespace FairyGUI
         /// <param name="callback"></param>
         public void Set(EventCallback1 callback)
         {
-            _bridge.ClearCallbackExceptCapture();
+            _bridge.Clear();
             if (callback != null)
                 _bridge.Add(callback);
         }
@@ -111,7 +106,7 @@ namespace FairyGUI
 #endif
         public void Set(EventCallback0 callback)
         {
-            _bridge.ClearCallbackExceptCapture();
+            _bridge.Clear();
             if (callback != null)
                 _bridge.Add(callback);
         }

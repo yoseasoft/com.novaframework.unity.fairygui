@@ -92,8 +92,7 @@ namespace FairyGUI
                         .SetDelay(_tweenConfig.delay)
                         .SetEase(_tweenConfig.easeType, _tweenConfig.customEase)
                         .SetTarget(this)
-                        .SetListener(this)
-                        .SetIgnoreEngineTimeScale(ignoreGearTweenTimeScale);
+                        .SetListener(this);
                 }
             }
             else

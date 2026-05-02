@@ -220,7 +220,7 @@ namespace FairyGUI
 
         void RecoverMaterials()
         {
-            if (_materialsBackup is null || _materialsBackup.Count == 0)
+            if (_materialsBackup.Count == 0)
                 return;
 
             int cnt = _renderers.Count;

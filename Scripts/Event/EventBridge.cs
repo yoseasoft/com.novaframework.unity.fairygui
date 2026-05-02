@@ -139,15 +139,6 @@ namespace FairyGUI
             _captureCallback = null;
         }
 
-        /// <summary>
-        /// 本地修改: 只清除callback，不清除captureCallback(目前Capture的仅FairyGUI内部使用)
-        /// </summary>
-        public void ClearCallbackExceptCapture()
-        {
-            _callback1 = null;
-            _callback0 = null;
-        }
-
         public void CallInternal(EventContext context)
         {
             _dispatching = true;

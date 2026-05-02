@@ -3,10 +3,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
-#if UNITY_WEBGL || WEIXINMINIGAME
-using WeChatWASM;
-#endif
-
 #if FAIRYGUI_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
@@ -158,32 +154,9 @@ namespace FairyGUI
                 _keyboardInput = value;
                 if (value && _keyboard == null)
                 {
-            #if !(UNITY_WEBPLAYER || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_EDITOR)
-                    if (Application.platform == RuntimePlatform.WebGLPlayer)
-                    {
-                #if UNITY_WEBGL || WEIXINMINIGAME
-                        _keyboard = new WXScreenKeyboard();
-                        _keyboardInput = true;
-                        Debug.Log($"--- new WXScreenKeyboard Application.platform = {Application.platform} _keyboardInput = {_keyboardInput} value = {value}  touchScreen = {touchScreen} ---");
-                #endif
-                    }
-                    else
-                    {
-                        _keyboard = new TouchScreenKeyboard();
-                        Debug.Log($"--- new TouchScreenKeyboard Application.platform = {Application.platform} _keyboardInput = {_keyboardInput}  touchScreen = {touchScreen} ---");
-                    }
-            #else
-                #if UNITY_WEBGL || WEIXINMINIGAME
-                    //only TuanJie Version 
-                    //if (Application.platform == RuntimePlatform.WeixinMiniGamePlayer)
-                    if ((int)(Application.platform) == 50)
-                    {
-                        _keyboard = new WXScreenKeyboard();
-                        _keyboardInput = true;
-                        Debug.Log($"--- WeixinMiniGame new WXScreenKeyboard Application.platform = {Application.platform} _keyboardInput = {_keyboardInput}  touchScreen = {touchScreen} ---");
-                    }
-                #endif
-            #endif
+#if !(UNITY_WEBPLAYER || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_EDITOR)
+                    _keyboard = new TouchScreenKeyboard();
+#endif
                 }
             }
         }
@@ -249,24 +222,20 @@ namespace FairyGUI
 
             bool isOSX = Application.platform == RuntimePlatform.OSXPlayer
                 || Application.platform == RuntimePlatform.OSXEditor;
-            
+
             if (Application.platform == RuntimePlatform.WindowsPlayer
                 || Application.platform == RuntimePlatform.WindowsEditor
-                //|| Application.platform == RuntimePlatform.WebGLPlayer
+                || Application.platform == RuntimePlatform.WebGLPlayer
                 || isOSX)
                 touchScreen = false;
             else
             {
 #if FAIRYGUI_INPUT_SYSTEM
                 touchScreen = Touchscreen.current != null;
-                Debug.Log($"--- FAIRYGUI_INPUT_SYSTEM touchScreen = {touchScreen} ---");
 #else
                 touchScreen = Input.touchSupported;
-                Debug.Log($"--- Not FAIRYGUI_INPUT_SYSTEM touchScreen = {touchScreen} ---");
 #endif
             }
-            
-            //Debug.Log($"--- Stage(): Application.platform = {Application.platform}, touchScreen = {touchScreen} ---");
 
             // 在PC上，是否retina屏对输入法位置，鼠标滚轮速度都有影响，但现在没发现Unity有获得的方式。仅判断是否Mac可能不够（外接显示器的情况）。所以最好自行设置。
             devicePixelRatio = (isOSX && Screen.dpi > 96) ? 2 : 1;
@@ -898,7 +867,7 @@ namespace FairyGUI
 #else
                 for (int i = 0; i < Input.touchCount; ++i)
                 {
-                    UnityEngine.Touch uTouch = Input.GetTouch(i);
+                    Touch uTouch = Input.GetTouch(i);
                     Vector2 pos = uTouch.position;
                     int touchId = uTouch.fingerId;
 #endif
@@ -948,7 +917,9 @@ namespace FairyGUI
 #endif
                 pos.y = Screen.height - pos.y;
                 TouchInfo touch = _touches[0];
-                if (pos.x < 0 || pos.y < 0) // outside of the window
+                if (float.IsNaN(pos.x) || float.IsNaN(pos.y) || float.IsInfinity(pos.x) || float.IsInfinity(pos.y)) //not a valid position
+                    _touchTarget = this;
+                else if (pos.x < 0 || pos.y < 0) // outside of the window
                     _touchTarget = this;
                 else
                     _touchTarget = HitTest(pos, true);
@@ -1195,7 +1166,7 @@ namespace FairyGUI
 
             if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame)
 #else
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
 #endif
             {
                 if (!touch.began)
@@ -1217,7 +1188,7 @@ namespace FairyGUI
 #if FAIRYGUI_INPUT_SYSTEM
             if (mouse.leftButton.wasReleasedThisFrame || mouse.rightButton.wasReleasedThisFrame || mouse.middleButton.wasReleasedThisFrame)
 #else
-            if (Input.GetMouseButtonUp(0))
+            if (Input.GetMouseButtonUp(0) || Input.GetMouseButtonUp(1) || Input.GetMouseButtonUp(2))
 #endif
             {
                 if (touch.began)
@@ -1261,7 +1232,7 @@ namespace FairyGUI
 #else
             for (int i = 0; i < Input.touchCount; i++)
             {
-                UnityEngine.Touch uTouch = Input.GetTouch(i);
+                Touch uTouch = Input.GetTouch(i);
 #endif
 
                 if (uTouch.phase == TouchPhase.Stationary)

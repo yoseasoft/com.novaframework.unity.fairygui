@@ -456,12 +456,6 @@ namespace FairyGUI
 
         void GetPartialText(int startIndex, int endIndex, StringBuilder buffer)
         {
-            // 本地修改:临时修复
-            if (startIndex < 0)
-            {
-                return;
-            }
-
             int elementCount = textField.htmlElements.Count;
             int lastIndex = startIndex;
             string tt;

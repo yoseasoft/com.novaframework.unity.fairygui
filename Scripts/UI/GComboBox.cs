@@ -543,7 +543,6 @@ namespace FairyGUI
             this.root.TogglePopup(dropdown, this, _popupDirection);
             if (dropdown.parent != null)
             {
-                GRoot.inst.onSizeChanged.Add(ShowDropdown);
                 dropdown.displayObject.onRemovedFromStage.Add(__popupWinClosed);
                 SetState(GButton.DOWN);
             }
@@ -564,7 +563,6 @@ namespace FairyGUI
 
         private void __popupWinClosed(object obj)
         {
-            GRoot.inst.onSizeChanged.Remove(ShowDropdown);
             dropdown.displayObject.onRemovedFromStage.Remove(__popupWinClosed);
             SetCurrentState();
 

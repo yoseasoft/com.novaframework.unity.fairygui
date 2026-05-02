@@ -179,35 +179,6 @@ namespace FairyGUI
         /// </summary>
         public static bool makePixelPerfect = false;
 
-        // 参考:https://ask.fairygui.com/?/article/6555
-        #region 连字保护（ContinuousWordProtect）
-
-        /// <summary>
-        /// 是否启用连字保护
-        /// </summary>
-        public static bool cwpEnabled = true;
-
-        /// <summary>
-        /// 连字保护最小字距
-        /// </summary>
-        public static float cwpMinLetterSpacing = -2;
-
-        /// <summary>
-        /// 连字保护是否启用拉伸（类似 Office-Word 的效果）
-        /// </summary>
-        public static bool cwpStretchEnabled = true;
-
-        /// <summary>
-        /// 连字保护正则模板
-        /// [\u4e00-\u9fa5]是汉字
-        /// (\+?|-?|>?|<?)\d+是数字
-        /// [A-Za-z]+是英文单词
-        /// 后续如果要支持什么韩文、日文，都需要在这里处理。
-        /// </summary>
-        public static string cwpPattern = @"[\u4e00-\u9fa5]|(\+?|-?|>?|<?)\d+|[A-Za-z]+|\(|（|\<|《|\[|【|{|“|‘";
-
-        #endregion
-
         public enum ConfigKey
         {
             DefaultFont,

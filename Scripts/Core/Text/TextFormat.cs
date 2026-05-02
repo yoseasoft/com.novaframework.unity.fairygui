@@ -94,36 +94,12 @@ namespace FairyGUI
         /// </summary>
         public Color shadowColor;
 
-        // 参考:https://ask.fairygui.com/?/article/6555
-        #region 连字保护（ContinuousWordProtect）
-
-        /// <summary>
-        /// 是否启用连字保护
-        /// </summary>
-        public bool cwpEnabled;
-
-        /// <summary>
-        /// 连字保护是否启用拉伸（类似 Office-Word 的效果）
-        /// </summary>
-        public bool cwpStretchEnabled;
-
-        /// <summary>
-        /// 连字保护最小字距
-        /// </summary>
-        public float cwpMinLetterSpacing;
-
-        #endregion
-
         public TextFormat()
         {
             color = Color.black;
             size = 12;
             lineSpacing = 3;
             outlineColor = shadowColor = Color.black;
-
-            cwpEnabled = UIConfig.cwpEnabled;
-            cwpStretchEnabled = UIConfig.cwpStretchEnabled;
-            cwpMinLetterSpacing = UIConfig.cwpMinLetterSpacing;
         }
 
         /// <summary>

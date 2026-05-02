@@ -520,14 +520,6 @@ namespace FairyGUI
                 if (p.x != 0 || p.y != 0) //(p != Vector3.zero) we got (0,0,1) in some unity version, especially on recovering from sleep
                     HitTestContext.screenPoint = p;
             }
-
-#if UNITY_EDITOR
-            if (float.IsPositiveInfinity(HitTestContext.screenPoint.x))
-            {
-                HitTestContext.screenPoint = Vector3.zero;
-            }
-#endif
-
             HitTestContext.worldPoint = StageCamera.main.ScreenToWorldPoint(HitTestContext.screenPoint);
             HitTestContext.direction = Vector3.back;
             HitTestContext.forTouch = forTouch;
@@ -950,6 +942,7 @@ namespace FairyGUI
 
         private void CollectChildren(Container initiator, bool outlineChanged)
         {
+            EnsureSizeCorrect();
             int count = _children.Count;
             for (int i = 0; i < count; i++)
             {

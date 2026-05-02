@@ -9,11 +9,6 @@ namespace FairyGUI
     {
         public static bool disableAllTweenEffect = false;
 
-        /// <summary>
-        /// 忽略控制器动效的时间缩放
-        /// </summary>
-        public static bool ignoreGearTweenTimeScale = false;
-
         protected GObject _owner;
         protected Controller _controller;
         protected GearTweenConfig _tweenConfig;

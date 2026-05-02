@@ -603,11 +603,6 @@ namespace FairyGUI
                     UpdateTransformMatrix();
                 else
                 {
-                    if (!cachedTransform)
-                    {
-                        return;
-                    }    
-
                     cachedTransform.localEulerAngles = _rotation;
                     ApplyPivot();
                 }
@@ -890,7 +885,7 @@ namespace FairyGUI
                 return;
             }
 
-            _renderingOrder = context.renderingOrder + 1;
+            _renderingOrder = context.renderingOrder;
             if (graphics != null)
                 graphics.SetRenderingOrder(context, inBatch);
             else

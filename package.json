@@ -2,7 +2,7 @@
   "name": "com.novaframework.unity.fairygui",
   "displayName": "NovaFramework.FairyGUI",
   "description": "The FairyGUI package for NovaFramework",
-  "version": "1.0.0",
+  "version": "5.2.0",
   "unity": "2018.3",
   "unityRelease": "0f1",
   "license": "MIT",

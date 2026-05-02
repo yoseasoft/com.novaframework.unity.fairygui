@@ -490,14 +490,9 @@ namespace FairyGUI
         {
             UIPackage pkg = GetByName(pkgName);
             if (pkg != null)
-            {
                 pkg.CreateObjectAsync(resName, callback);
-            }
             else
-            {
                 Debug.LogError("FairyGUI: package not found - " + pkgName);
-                callback?.Invoke(null);
-            }
         }
 
         public static void CreateObjectFromURL(string url, CreateObjectCallback callback)
@@ -1112,7 +1107,6 @@ namespace FairyGUI
             if (!_itemsByName.TryGetValue(resName, out pi))
             {
                 Debug.LogError("FairyGUI: resource not found - " + resName + " in " + this.name);
-                callback?.Invoke(null);
                 return;
             }
 

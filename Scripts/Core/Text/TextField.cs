@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using FairyGUI.Utils;
 
@@ -723,7 +722,7 @@ namespace FairyGUI
 
         void BuildLines2()
         {
-            float normalLetterSpacing = _textFormat.letterSpacing * _fontSizeScale; // 正常情况下的字距
+            float letterSpacing = _textFormat.letterSpacing * _fontSizeScale;
             float lineSpacing = (_textFormat.lineSpacing - 1) * _fontSizeScale;
             float rectWidth = _contentRect.width - GUTTER_X * 2;
             float rectHeight = _contentRect.height > 0 ? Mathf.Max(_contentRect.height, _font.GetLineHeight(_textFormat.size)) : 0;
@@ -756,7 +755,6 @@ namespace FairyGUI
             LineInfo line = LineInfo.Borrow();
             _lines.Add(line);
             line.y = line.y2 = GUTTER_Y;
-            line.letterSpacing = normalLetterSpacing;
             sLineChars.Clear();
 
             for (int charIndex = 0; charIndex < textLength; charIndex++)
@@ -856,22 +854,21 @@ namespace FairyGUI
                 if (glyphWidth != 0)
                 {
                     if (posx != 0)
-                        posx += line.letterSpacing;
+                        posx += letterSpacing;
                     posx += glyphWidth;
                 }
 
-                if (!_singleLine && ch == '\n')
+                if (ch == '\n' && !_singleLine)
                 {
-                    UpdateLineInfo(line, sLineChars.Count);
+                    UpdateLineInfo(line, letterSpacing, sLineChars.Count);
 
                     LineInfo newLine = LineInfo.Borrow();
                     _lines.Add(newLine);
                     newLine.y = line.y + (line.height + lineSpacing);
-                    if (newLine.y < GUTTER_Y) // lineSpacing maybe negative
+                    if (newLine.y < GUTTER_Y) //lineSpacing maybe negative
                         newLine.y = GUTTER_Y;
                     newLine.y2 = newLine.y;
                     newLine.charIndex = line.charIndex + line.charCount;
-                    newLine.letterSpacing = normalLetterSpacing;
 
                     if (checkEdge && line.y + line.height < rectHeight)
                         _ellipsisCharIndex = line.charIndex + Math.Max(0, line.charCount - ELLIPSIS_LENGTH);
@@ -886,157 +883,19 @@ namespace FairyGUI
                     if (wrap)
                     {
                         int lineCharCount = sLineChars.Count;
+                        int toMoveChars;
 
-                        // 参考:https://ask.fairygui.com/?/article/6555
-                        bool cwpMoveNext = false;
-
-                        if (_textFormat.cwpEnabled)
+                        if (wordPossible && wordLen < 20 && lineCharCount > 2) //if word had broken, move word to new line
                         {
-                            // 是否为前置标点符号
-                            bool isFrontPunctuation = CharIsFrontPunctuation(ch);
-
-                            // 是否为后置标点符号
-                            bool isBackPunctuation = CharIsBackPunctuation(ch);
-
-                            // 是否为标点
-                            bool isPunctuation = isFrontPunctuation || isBackPunctuation;
-
-                            // 前一个字符是否是前置标点
-                            bool prevCharIsFrontPunctuation = charIndex != 0 && CharIsFrontPunctuation(_parsedText[charIndex - 1]);
-
-                            // 是否为英文单词
-                            bool isContinuousLetter = 
-                                (char.IsLower(ch) || char.IsUpper(ch))
-                                && charIndex != 0
-                                && (char.IsLetter(_parsedText[charIndex - 1]) || (charIndex < textLength - 1 && char.IsLetter(_parsedText[charIndex + 1])));
-
-                            if (isContinuousLetter)
-                            {
-                                char prevChar = _parsedText[charIndex - 1];
-                                bool hasNextChar = charIndex < textLength - 1;
-                                char nextChar = hasNextChar ? _parsedText[charIndex + 1] : default;
-                                if (!(char.IsLower(prevChar) || char.IsUpper(prevChar)) &&
-                                    !(hasNextChar && (char.IsLower(nextChar) || char.IsUpper(nextChar))))
-                                {
-                                    isContinuousLetter = false;
-                                }
-                            }
-
-                            // 是否为连续的数字
-                            bool isContinuousDigit = charIndex != 0 && (char.IsDigit(ch) || ch == '.');
-                            if (isContinuousDigit)
-                            {
-                                char prevChar = _parsedText[charIndex - 1];
-                                if (
-                                    !char.IsDigit(prevChar)
-                                    && prevChar != '-'
-                                    && prevChar != '+'
-                                    && prevChar != '.'
-                                    && charIndex < textLength - 1
-                                    && !char.IsDigit(_parsedText[charIndex + 1])
-                                )
-                                {
-                                    isContinuousDigit = false;
-                                }
-                            }
-
-                            if (isPunctuation || prevCharIsFrontPunctuation || isContinuousLetter || isContinuousDigit)
-                            {
-                                float needGap = posx - rectWidth;
-
-                                float needReduceSpacing = needGap / lineCharCount;
-
-                                // 如果字距还可以缩小，就缩小(自动收缩模式除外, 因容易影响自动收缩的字体大小判断)
-                                if (_autoSize != AutoSizeType.Shrink 
-                                    && !isFrontPunctuation
-                                    && line.letterSpacing - needReduceSpacing >= _textFormat.cwpMinLetterSpacing)
-                                {
-                                    line.letterSpacing -= needReduceSpacing;
-                                    posx -= needGap;
-                                    continue;
-                                }
-
-                                // 代码执行到此处，说明已经无法缩小字距了。
-                                // 因此，需要转移到下一行。
-
-                                int frontWrapIndex = -1;
-                                int frontWrapIndexInAll = -1;
-
-                                if (isFrontPunctuation)
-                                {
-                                    frontWrapIndexInAll = charIndex;
-                                    frontWrapIndex = frontWrapIndexInAll - line.charIndex;
-                                }
-                                else
-                                {
-                                    // 假如不是前置标点，需要连同本行最后一个单词一起挪到下一行
-                                    string frontStr = _parsedText.Substring(line.charIndex, charIndex - line.charIndex);
-                                    MatchCollection matches = Regex.Matches(frontStr, UIConfig.cwpPattern);
-                                    if (matches.Count > 1)
-                                    {
-                                        Match lastMatch = matches[matches.Count - 1];
-                                        frontWrapIndex = lastMatch.Index;
-                                        frontWrapIndexInAll = frontWrapIndex + line.charIndex;
-                                    }
-                                }
-
-                                // 如果可以裁剪
-                                if (frontWrapIndex != -1)
-                                {
-                                    charIndex = frontWrapIndexInAll - 1;
-                                    lineCharCount = frontWrapIndexInAll - line.charIndex;
-                                    line.charCount = (short)lineCharCount;
-
-                                    float charWidthTotal = 0f; // 计算本行所有字符的宽度
-                                    int removeNum = sLineChars.Count - lineCharCount; // 本行需删除字符数量
-                                    for (int n = sLineChars.Count - 1; n >= 0; n--)
-                                    {
-                                        LineCharInfo ci = sLineChars[n];
-                                        if (removeNum > 0)
-                                        {
-                                            sLineChars.RemoveAt(n);
-                                            posx -= ci.width + line.letterSpacing;
-                                            removeNum--;
-                                            continue;
-                                        }
-
-                                        charWidthTotal += ci.width;
-                                    }
-
-                                    cwpMoveNext = true;
-
-                                    // 如果需要拉伸本行，就扩大字距（类似 Office-Word 的效果）
-                                    if (_textFormat.cwpStretchEnabled)
-                                    {
-                                        // 计算时减去1/3字的宽度, 多行对齐效果会好一点, 不减的话拉伸这行通常会显得特别突出
-                                        float partOfWordAverageWidth = charWidthTotal / lineCharCount / 3;
-                                        float letterSpacingTotal = (rectWidth - partOfWordAverageWidth) - charWidthTotal;
-                                        line.letterSpacing = letterSpacingTotal / (lineCharCount - 1);
-                                    }
-                                }
-                            }
-                        }
-
-                        int toMoveChars = 0;
-
-                        if (cwpMoveNext)
-                        {
-                            UpdateLineInfo(line, lineCharCount);
+                            toMoveChars = wordLen;
+                            //we caculate the line width WITHOUT the tailing space
+                            UpdateLineInfo(line, letterSpacing, lineCharCount - (toMoveChars + 1));
+                            line.charCount++; //but keep it in this line.
                         }
                         else
-                        { 
-                            if (wordPossible && wordLen < 20 && lineCharCount > 2) // if word had broken, move word to new line
-                            {
-                                toMoveChars = wordLen;
-                                // we calculate the line width WITHOUT the tailing space
-                                UpdateLineInfo(line, lineCharCount - (toMoveChars + 1));
-                                line.charCount++; // but keep it in this line.
-                            }
-                            else
-                            {
-                                toMoveChars = lineCharCount > 1 ? 1 : 0; // if only one char here, we cant move it to new line
-                                UpdateLineInfo(line, lineCharCount - toMoveChars);
-                            }   
+                        {
+                            toMoveChars = lineCharCount > 1 ? 1 : 0; //if only one char here, we cant move it to new line
+                            UpdateLineInfo(line, letterSpacing, lineCharCount - toMoveChars);
                         }
 
                         LineInfo newLine = LineInfo.Borrow();
@@ -1046,17 +905,15 @@ namespace FairyGUI
                             newLine.y = GUTTER_Y;
                         newLine.y2 = newLine.y;
                         newLine.charIndex = line.charIndex + line.charCount;
-                        newLine.letterSpacing = normalLetterSpacing;
 
                         posx = 0;
-
                         if (toMoveChars != 0)
                         {
                             for (int i = line.charCount; i < lineCharCount; i++)
                             {
                                 LineCharInfo ci = sLineChars[i];
                                 if (posx != 0)
-                                    posx += line.letterSpacing;
+                                    posx += letterSpacing;
                                 posx += ci.width;
                             }
 
@@ -1076,13 +933,7 @@ namespace FairyGUI
                 }
             }
 
-            UpdateLineInfo(line, sLineChars.Count);
-
-            // 如果最后一行是空行，就干掉它的高度
-            if (lines.Count > 1 && lines[lines.Count - 1].charCount == 0)
-            {
-                lines[lines.Count - 1].height = 0 - GUTTER_Y;
-            }
+            UpdateLineInfo(line, letterSpacing, sLineChars.Count);
 
             if (_textWidth > 0)
                 _textWidth += GUTTER_X * 2;
@@ -1100,56 +951,7 @@ namespace FairyGUI
             _textHeight = Mathf.RoundToInt(_textHeight);
         }
 
-        /// <summary>
-        /// 判断字符是否是前置标点符号
-        /// </summary>
-        static bool CharIsFrontPunctuation(char ch)
-        {
-            return ch == '('
-                   || ch == '（'
-                   || ch == '<'
-                   || ch == '《'
-                   || ch == '['
-                   || ch == '【'
-                   || ch == '{'
-                   || ch == '“'
-                   || ch == '‘';
-        }
-
-        /// <summary>
-        /// 判断字符是否是后置标点符号
-        /// </summary>
-        static bool CharIsBackPunctuation(char ch)
-        {
-            return ch == ','
-                   || ch == '，'
-                   || ch == '.'
-                   || ch == '。'
-                   || ch == '!'
-                   || ch == '！'
-                   || ch == '?'
-                   || ch == '？'
-                   || ch == ':'
-                   || ch == '：'
-                   || ch == ';'
-                   || ch == '；'
-                   || ch == ')'
-                   || ch == '）'
-                   || ch == '>'
-                   || ch == '》'
-                   || ch == ']'
-                   || ch == '】'
-                   || ch == '}'
-                   || ch == '”'
-                   || ch == '’'
-                   || ch == '"'
-                   || ch == '\''
-                   || ch == '…'
-                   || ch == '、'
-                   || ch == '%';
-        }
-
-        void UpdateLineInfo(LineInfo line, int cnt)
+        void UpdateLineInfo(LineInfo line, float letterSpacing, int cnt)
         {
             for (int i = 0; i < cnt; i++)
             {
@@ -1166,7 +968,7 @@ namespace FairyGUI
                 if (ci.width > 0)
                 {
                     if (line.width != 0)
-                        line.width += line.letterSpacing;
+                        line.width += letterSpacing;
                     line.width += ci.width;
                 }
             }
@@ -1318,6 +1120,7 @@ namespace FairyGUI
                 return;
             }
 
+            float letterSpacing = _textFormat.letterSpacing * _fontSizeScale;
             TextFormat format = _textFormat;
             _font.SetFormat(format, _fontSizeScale);
             _font.StartDraw(graphics);
@@ -1515,9 +1318,9 @@ namespace FairyGUI
                                 htmlObj.SetPosition(element.position.x, element.position.y);
 
                                 if (_textDirection == RTLSupport.DirectionType.RTL)
-                                    posx -= line.letterSpacing;
+                                    posx -= letterSpacing;
                                 else
-                                    posx += htmlObj.width + line.letterSpacing + 2;
+                                    posx += htmlObj.width + letterSpacing + 2;
                             }
                         }
 
@@ -1547,7 +1350,7 @@ namespace FairyGUI
                             {
                                 if (lineClipped || clipping && (rectWidth < 7 || posx != (indent_x - GUTTER_X)) && posx < GUTTER_X - 0.5f) //超出区域，剪裁
                                 {
-                                    posx -= (line.letterSpacing + glyphWidth);
+                                    posx -= (letterSpacing + glyphWidth);
                                     continue;
                                 }
 
@@ -1557,7 +1360,7 @@ namespace FairyGUI
                             {
                                 if (lineClipped || clipping && (rectWidth < 7 || posx != (GUTTER_X + indent_x)) && posx + glyphWidth > _contentRect.width - GUTTER_X + 0.5f) //超出区域，剪裁
                                 {
-                                    posx += line.letterSpacing + glyphWidth;
+                                    posx += letterSpacing + glyphWidth;
                                     continue;
                                 }
                             }
@@ -1585,9 +1388,9 @@ namespace FairyGUI
                         _font.DrawGlyph(vb, posx, -(line.y + line.baseline));
 
                         if (_textDirection == RTLSupport.DirectionType.RTL)
-                            posx -= line.letterSpacing;
+                            posx -= letterSpacing;
                         else
-                            posx += line.letterSpacing + glyphWidth;
+                            posx += letterSpacing + glyphWidth;
                     }
                     else //if GetGlyph failed
                     {
@@ -1605,9 +1408,9 @@ namespace FairyGUI
                         charCount++;
 
                         if (_textDirection == RTLSupport.DirectionType.RTL)
-                            posx -= line.letterSpacing;
+                            posx -= letterSpacing;
                         else
-                            posx += line.letterSpacing;
+                            posx += letterSpacing;
                     }
 
                     if (isEllipsis)
@@ -1761,11 +1564,6 @@ namespace FairyGUI
             /// 行的y轴位置
             /// </summary>
             public float y;
-
-            /// <summary>
-            /// 字距
-            /// </summary>
-            public float letterSpacing;
 
             /// <summary>
             /// 行的y轴位置的备份
